@@ -1,0 +1,69 @@
+---
+description: Architecture and coding rules for the Creeto AI prompt-to-script pipeline
+alwaysApply: false
+---
+# Stack
+- Backend: Node.js + Express + TypeScript
+- Database: Supabase (PostgreSQL)
+- Memory/RAG: Supermemory.ai
+- Research: Perplexity API (sonar-pro)
+- AI Generation: Claude API (claude-sonnet-4-20250514)
+- Safety Layer 2: OpenAI Moderation API
+- Job Queue: BullMQ + Redis
+- Package manager: pnpm only
+
+# Architecture Rules
+- Use controller → service → repository pattern
+- Controllers: handle HTTP only, try/catch on every method, call service
+- Services: business logic only, call repositories and external APIs
+- Repositories: all Supabase queries, never in services or controllers
+- No any type. No raw LLM text stored. Zod validates every LLM response.
+
+# Safety Enforcement
+- ContentSafetyPipeline() must be awaited before EVERY Claude or OpenAI generation call
+- No SCRIPT_GENERATE without FACT_CHECK status = SUCCEEDED in jobs table
+- All 4 layers must pass: keyword filter → OpenAI moderation → rules engine → Claude misinformation pre-check
+
+# API Response Shape
+Always return: { success: boolean, message: string, data?: T }
+
+# Path Aliases
+Use @/ for all src imports. Never use relative paths.
+@/controllers → src/controllers
+@/services    → src/services
+@/repositories → src/repositories
+@/types       → src/types
+@/utils       → src/utils
+@/config      → src/config
+@/validators  → src/validators
+@/workers     → src/workers
+@/queue       → src/queue
+
+# LLM Prompt Rules
+- Claude model: always claude-sonnet-4-20250514
+- Perplexity model: always sonar-pro with return_citations: true
+- Every Claude response parsed with Zod before Supabase insert
+- On Zod parse failure: retry with corrective prompt (max 3 attempts)
+
+# Supermemory Usage
+- supermemory.add() after every completed script (content history)
+- supermemory.search() at every generation step — replaces all RAG retrieval
+- Always pass { userId, projectId } as metadata for scoped retrieval
+
+# Supabase Real-time
+- Frontend subscribes to: jobs, scripts, fact_check_results filtered by project_id
+- Never poll — use Supabase real-time subscriptions
+
+# File Naming
+- Controllers: *.controller.ts
+- Services: *.service.ts
+- Repositories: *.repository.ts
+- Routes: *.routes.ts
+- Types: index.ts in types/
+
+# Do Not
+- No console.log in production code
+- No raw LLM text blobs stored to Supabase
+- No business logic in controllers
+- No DB queries in services
+- No npm or yarn — pnpm only

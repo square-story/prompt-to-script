@@ -1,0 +1,12 @@
+import { Router } from 'express'
+import factCheckRoutes from '@/routes/factcheck.routes'
+import scriptRoutes    from '@/routes/script.routes'
+import projectRoutes   from '@/routes/project.routes'
+
+const router = Router()
+
+router.use('/factcheck', factCheckRoutes)
+router.use('/scripts',   scriptRoutes)
+router.use('/projects',projectRoutes)
+
+export default router

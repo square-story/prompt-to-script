@@ -1,0 +1,10 @@
+{
+  "name": "creeto-ai",
+  "private": true,
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "dev": "pnpm --parallel --filter './apps/*' dev",
+    "build": "pnpm --recursive build",
+    "lint": "pnpm --recursive lint"
+  }
+}
