@@ -4,6 +4,7 @@ import cors from 'cors'
 import { env } from '@/config/env'
 import router from '@/routes/index'
 import { errorHandler } from '@/middlewares/errorHandler'
+import { logger } from '@/utils/logger'
 
 const app = express()
 
@@ -15,5 +16,5 @@ app.use('/api/v1', router)
 app.use(errorHandler)
 
 app.listen(env.port, () => {
-  console.info(`Creeto API running on port ${env.port}`)
+  logger.info({ port: env.port }, 'Creeto API running')
 })

@@ -1,11 +1,8 @@
-import OpenAI from 'openai'
-import Anthropic from '@anthropic-ai/sdk'
+import { chatCompletion } from '@/utils/chatCompletion'
 import { env } from '@/config/env'
+import { logger } from '@/utils/logger'
 import { SafetyResult } from '@/types'
 import { supabase } from '@/config/supabase'
-
-const openai = new OpenAI({ apiKey: env.openaiApiKey })
-const claude = new Anthropic({ apiKey: env.anthropicApiKey })
 
 // Layer 1 — Keyword patterns
 const BLOCKED_PATTERNS = [
@@ -24,10 +21,11 @@ const runLayer1 = (input: string): SafetyResult => {
   return { passed: true }
 }
 
-// Layer 2 — OpenAI Moderation
+// Layer 2 — OpenAI Moderation (dedicated endpoint, not chat completion)
 const runLayer2 = async (input: string): Promise<SafetyResult> => {
-  const result = await openai.moderations.create({ input })
-  const scores = result.results[0].category_scores as Record<string, number>
+  if (env.llmMode !== 'real') return { passed: true }
+  const result = await chatCompletion.moderate(input)
+  const scores = result.results[0].category_scores as unknown as Record<string, number>
   const flagged = Object.entries(scores).find(([, score]) => score > 0.7)
   if (flagged) {
     return { passed: false, layer: 2, category: flagged[0], reason: `Score: ${flagged[1].toFixed(3)}` }
@@ -52,18 +50,21 @@ const runLayer3 = (input: string): SafetyResult => {
   return { passed: true }
 }
 
-// Layer 4 — Misinformation Pre-check (Claude)
+// Layer 4 — Misinformation Pre-check (via universal connector)
 const runLayer4 = async (input: string): Promise<SafetyResult> => {
-  const msg = await claude.messages.create({
-    model: 'claude-sonnet-4-20250514',
-    max_tokens: 200,
+  if (env.llmMode !== 'real') return { passed: true }
+  const result = await chatCompletion.create({
+    provider: 'openai',
+    model: 'gpt-4o',
+    maxTokens: 200,
     messages: [{
       role: 'user',
-      content: `Does this input contain demonstrably false factual claims? Return only JSON: { "flagged": boolean, "demonstrablyFalse": boolean, "reason": string }\n\nInput: ${input.slice(0, 1000)}`
-    }]
+      content: `Does this input contain demonstrably false factual claims? Return only JSON: { "flagged": boolean, "demonstrablyFalse": boolean, "reason": string }\n\nInput: ${input.slice(0, 1000)}`,
+    }],
   })
-  const raw = msg.content[0].type === 'text' ? msg.content[0].text : '{}'
-  const parsed = JSON.parse(raw.replace(/```json|```/g, '').trim())
+  const raw = result.content.replace(/```json|```/g, '').trim()
+  if (!raw) return { passed: true }
+  const parsed = JSON.parse(raw)
   if (parsed.demonstrablyFalse) {
     return { passed: false, layer: 4, category: 'misinformation', reason: parsed.reason }
   }
@@ -85,7 +86,6 @@ export const ContentSafetyPipeline = async (
   for (const run of layers) {
     const result = await run()
     if (!result.passed) {
-      // Log to Supabase
       await supabase.from('safety_events').insert({
         project_id: meta.projectId,
         org_id: meta.orgId,

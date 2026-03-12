@@ -1,0 +1,18 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: #0a0c10;
+  color: #e8eaf0;
+}
+
+* {
+  border-color: #1e2229;
+}
+

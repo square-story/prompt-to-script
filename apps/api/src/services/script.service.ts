@@ -1,14 +1,12 @@
-import Anthropic from '@anthropic-ai/sdk'
 import { z } from 'zod'
 import { env } from '@/config/env'
+import { chatCompletion } from '@/utils/chatCompletion'
 import { supermemoryService } from '@/services/supermemory.service'
 import { factCheckRepository } from '@/repositories/factcheck.repository'
 import { scriptRepository } from '@/repositories/script.repository'
 import { personaRepository } from '@/repositories/persona.repository'
 import { ContentSafetyPipeline } from '@/utils/safetyPipeline'
 import { HookVariant, ScriptDocument } from '@/types'
-
-const claude = new Anthropic({ apiKey: env.anthropicApiKey })
 
 const HookVariantsSchema = z.object({
   hooks: z.array(z.object({
@@ -42,9 +40,10 @@ class ScriptService {
     const safety = await ContentSafetyPipeline(input.topic, { projectId: input.projectId })
     if (!safety.passed) throw new Error(`Safety blocked: ${safety.category}`)
 
-    const msg = await claude.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 600,
+    const result = await chatCompletion.create({
+      provider: 'openai',
+      model: 'gpt-4o',
+      maxTokens: 600,
       system: `You are a short-form video hook writer. Persona: brand voice = ${persona?.brandVoice}, audience = ${persona?.targetAudience}, niche = ${persona?.niche}, platform = ${persona?.platformPreference?.join(', ')}.`,
       messages: [{
         role: 'user',
@@ -52,8 +51,7 @@ class ScriptService {
       }],
     })
 
-    const raw = msg.content[0].type === 'text' ? msg.content[0].text : '{}'
-    const parsed = HookVariantsSchema.parse(JSON.parse(raw.replace(/```json|```/g, '').trim()))
+    const parsed = HookVariantsSchema.parse(JSON.parse(result.content.replace(/```json|```/g, '').trim()))
     return parsed.hooks
   }
 
@@ -75,9 +73,10 @@ class ScriptService {
     const safety = await ContentSafetyPipeline(input.topic, { projectId: input.projectId })
     if (!safety.passed) throw new Error(`Safety blocked: ${safety.category}`)
 
-    const msg = await claude.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 1200,
+    const result = await chatCompletion.create({
+      provider: 'openai',
+      model: 'gpt-4o',
+      maxTokens: 1200,
       system: `You are a short-form video script writer. Persona: brand voice = ${persona?.brandVoice}, audience = ${persona?.targetAudience}, niche = ${persona?.niche}, platform = ${persona?.platformPreference?.join(', ')}, content goal = ${persona?.contentGoal}. Ground every factual claim in the Verified Facts Block provided. Never invent facts.`,
       messages: [{
         role: 'user',
@@ -85,8 +84,7 @@ class ScriptService {
       }],
     })
 
-    const raw = msg.content[0].type === 'text' ? msg.content[0].text : '{}'
-    const validated = ScriptSchema.parse(JSON.parse(raw.replace(/```json|```/g, '').trim()))
+    const validated = ScriptSchema.parse(JSON.parse(result.content.replace(/```json|```/g, '').trim()))
 
     const scriptDoc: ScriptDocument = {
       projectId: input.projectId,
@@ -98,7 +96,6 @@ class ScriptService {
 
     const saved = await scriptRepository.create(scriptDoc)
 
-    // Add to Supermemory for future persona context
     await supermemoryService.add(
       `Script for topic "${input.topic}": ${validated.hook} ${validated.coreIdea}`,
       { userId: input.userId, projectId: input.projectId, tags: ['script', 'content-history'] }

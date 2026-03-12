@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto'
 import { Request, Response, NextFunction } from 'express'
 import { factCheckService } from '@/services/factcheck.service'
 import { jobRepository } from '@/repositories/job.repository'
@@ -6,7 +7,8 @@ import { ApiResponse } from '@/types/index'
 class FactCheckController {
   run = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { projectId, topic, prompt, contextSnippets } = req.body
+      const { topic, prompt, contextSnippets } = req.body
+      const projectId = req.body.projectId ?? randomUUID()
       const userId = (req as Request & { userId: string }).userId
 
       // Create job record

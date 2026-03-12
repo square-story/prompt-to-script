@@ -116,3 +116,63 @@ export interface ApiResponse<T = unknown> {
   message: string
   data?: T
 }
+
+// ─── Prompt → Research → Script (Mini Pipeline) ───────────────
+
+export interface PipelineInput {
+  prompt: string
+  referenceUrls?: string[]
+}
+
+export interface IngestedContent {
+  sourceType: 'pdf' | 'url' | 'prompt'
+  content: string
+  sourceLabel: string
+}
+
+export interface ResearchCitation {
+  url: string
+  domain: string
+  title?: string
+}
+
+export interface ResearchPoint {
+  claim: string
+  explanation: string
+  citations: ResearchCitation[]
+  confidence: 'high' | 'medium' | 'low'
+}
+
+export interface ResearchOutput {
+  topicSummary: string
+  keyFindings: ResearchPoint[]
+  statistics: { stat: string; source: string }[]
+  controversies: string[]
+  verifiedFactsSummary: string
+}
+
+export interface ScriptSection {
+  label: string
+  purpose: string
+  content: string
+  wordCount: number
+}
+
+export interface ScriptOutput {
+  hook: string
+  context: string
+  coreIdea: string
+  exampleEvidence: string
+  conclusion: string
+  callToAction: string
+  totalWordCount: number
+  estimatedDurationSeconds: number
+  sections: ScriptSection[]
+}
+
+export interface PipelineResult {
+  research: ResearchOutput
+  script: ScriptOutput
+  safetyPassed: boolean
+  processingTimeMs: number
+}
