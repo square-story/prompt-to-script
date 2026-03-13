@@ -2,7 +2,9 @@
   "compilerOptions": {
     "target": "ES2020",
     "module": "commonjs",
-    "lib": ["ES2020"],
+    "lib": [
+      "ES2020"
+    ],
     "outDir": "./dist",
     "rootDir": "./src",
     "baseUrl": "./src",
@@ -12,21 +14,55 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "paths": {
-      "@/controllers/*": ["controllers/*"],
-      "@/services/*":    ["services/*"],
-      "@/repositories/*":["repositories/*"],
-      "@/models/*":      ["models/*"],
-      "@/routes/*":      ["routes/*"],
-      "@/middlewares/*": ["middlewares/*"],
-      "@/utils/*":       ["utils/*"],
-      "@/config/*":      ["config/*"],
-      "@/validators/*":  ["validators/*"],
-      "@/types":         ["types/index"],
-      "@/types/*":       ["types/*"],
-      "@/workers/*":     ["workers/*"],
-      "@/queue/*":       ["queue/*"]
+      "@/controllers/*": [
+        "controllers/*"
+      ],
+      "@/services/*": [
+        "services/*"
+      ],
+      "@/repositories/*": [
+        "repositories/*"
+      ],
+      "@/models/*": [
+        "models/*"
+      ],
+      "@/routes/*": [
+        "routes/*"
+      ],
+      "@/middlewares/*": [
+        "middlewares/*"
+      ],
+      "@/utils/*": [
+        "utils/*"
+      ],
+      "@/config/*": [
+        "config/*"
+      ],
+      "@/validators/*": [
+        "validators/*"
+      ],
+      "@/types": [
+        "types/index"
+      ],
+      "@/types/*": [
+        "types/*"
+      ],
+      "@/workers/*": [
+        "workers/*"
+      ],
+      "@/queue/*": [
+        "queue/*"
+      ],
+      "@/prompts/*": [
+        "prompts/*"
+      ]
     }
   },
-  "include": ["src"],
-  "exclude": ["node_modules", "dist"]
+  "include": [
+    "src"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
 }

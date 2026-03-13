@@ -41,8 +41,6 @@ class PipelineController {
         sections,
       }
 
-      console.log(script, "LLOOOG")
-
       const result: PipelineResult = {
         research,
         script,

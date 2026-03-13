@@ -7,6 +7,8 @@ import { scriptRepository } from '@/repositories/script.repository'
 import { personaRepository } from '@/repositories/persona.repository'
 import { ContentSafetyPipeline } from '@/utils/safetyPipeline'
 import { HookVariant, ScriptDocument } from '@/types'
+import { buildScriptSystemPrompt } from '@/prompts/scriptWriter.prompt'
+import { buildScriptUserPrompt } from '@/prompts/userScript.prompt'
 
 const HookVariantsSchema = z.object({
   hooks: z.array(z.object({
@@ -77,10 +79,15 @@ class ScriptService {
       provider: 'openai',
       model: 'gpt-4o',
       maxTokens: 1200,
-      system: `You are a short-form video script writer. Persona: brand voice = ${persona?.brandVoice}, audience = ${persona?.targetAudience}, niche = ${persona?.niche}, platform = ${persona?.platformPreference?.join(', ')}, content goal = ${persona?.contentGoal}. Ground every factual claim in the Verified Facts Block provided. Never invent facts.`,
+      system: buildScriptSystemPrompt(persona),
       messages: [{
         role: 'user',
-        content: `Write a structured script for a 30-90 second video. Return only valid JSON matching this schema exactly: { "hook": string, "context": string, "coreIdea": string, "exampleEvidence": string, "conclusion": string, "callToAction": string, "wordCount": number, "estimatedDurationSeconds": number }\n\nSelected hook: "${input.selectedHook.text}"\nVerified facts summary: ${factCheck.factsBlockSummary}\nVerified facts: ${JSON.stringify(factCheck.verifiedFacts.map((f) => f.claim))}\nContext memory: ${memoryContext.join('\n')}`,
+        content: buildScriptUserPrompt({
+          topic: input.topic,
+          selectedHook: input.selectedHook,
+          factCheck: factCheck,
+          memoryContext: memoryContext,
+        }),
       }],
     })
 

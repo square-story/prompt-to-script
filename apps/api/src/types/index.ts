@@ -110,6 +110,17 @@ export interface ScriptDocument {
   version: number
 }
 
+export interface FactCheckDocument {
+  factcheckId: string
+  topicId: string
+  projectId: string
+  verifiedFacts: VerifiedFact[]
+  flaggedClaims: FlaggedClaim[]
+  blockedClaims: BlockedClaim[]
+  factsBlockSummary: string
+  checkedAt: string
+}
+
 // ─── API Response ────────────────────────────────────────────
 export interface ApiResponse<T = unknown> {
   success: boolean
