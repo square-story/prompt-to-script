@@ -1,7 +1,7 @@
 import { chatCompletion } from '@/utils/chatCompletion'
 import { env } from '@/config/env'
 import { logger } from '@/utils/logger'
-import { ResearchOutput, ScriptOutput } from '@/types/index'
+import { ResearchOutput, VideoScript } from '@/types/index'
 
 interface ResearchCitation {
   url: string
@@ -38,15 +38,86 @@ const buildMockResearch = (prompt: string): ResearchOutput => ({
     'Mock verified facts summary. Replace by setting LLM_MODE=real and providing API keys.',
 })
 
-const buildMockScript = (prompt: string): Omit<ScriptOutput, 'sections'> => ({
-  hook: `Ever wondered about "${prompt}"? Here\u2019s the surprising part.`,
-  context: 'This topic matters because it\u2019s changing fast and affecting everyday decisions.',
-  coreIdea: 'The core idea is that small shifts compound into big outcomes over time.',
-  exampleEvidence: 'One stat you can cite: \u201cMock statistic: 42%\u2026\u201d (example.com \u2014 mock).',
-  conclusion: 'So the takeaway: focus on the signal, not the noise.',
-  callToAction: 'If you want more breakdowns like this, follow for the next one.',
-  totalWordCount: 180,
-  estimatedDurationSeconds: 75,
+const buildMockScript = (prompt: string): VideoScript => ({
+  title: `The Surprising Truth About ${prompt}`,
+  topic: prompt,
+  targetPlatform: 'TikTok',
+  totalDurationSeconds: 60,
+  totalWordCount: 150,
+  sceneCount: 2,
+  scenes: [
+    {
+      sceneNumber: 1,
+      sceneType: 'AVATAR_OVER_BROLL',
+      startTimeSeconds: 0,
+      endTimeSeconds: 20,
+      durationSeconds: 20,
+      spokenLines: `Ever wondered about ${prompt}? Here is the surprising part you never knew.`,
+      wordCount: 13,
+      avatar: {
+        placement: 'BOTTOM_CENTER',
+        size: 'LARGE',
+        gestureHint: 'Points to screen',
+        eyeContact: true,
+        backgroundType: 'TRANSPARENT',
+        backgroundColor: null
+      },
+      broll: {
+        source: 'STOCK_VIDEO',
+        searchQuery: `people researching ${prompt}`,
+        searchKeywords: [prompt, 'research', 'surprise'],
+        visualDescription: 'Someone looking surprisingly at a laptop.',
+        mood: 'curious',
+        colorGrade: 'warm',
+        aspectRatio: '9:16',
+        durationSeconds: 20,
+        loopable: true,
+        fallbackSources: ['STOCK_IMAGE'],
+        infographicData: null
+      },
+      textOverlays: [
+        {
+          text: `The truth about ${prompt}`,
+          position: 'TOP',
+          style: 'TITLE',
+          animateIn: 'POP',
+          durationSeconds: 5,
+          highlightWords: ['truth']
+        }
+      ],
+      transitionOut: 'CUT',
+      directorNote: 'Keep it high energy.'
+    },
+    {
+      sceneNumber: 2,
+      sceneType: 'AVATAR_ONLY',
+      startTimeSeconds: 20,
+      endTimeSeconds: 60,
+      durationSeconds: 40,
+      spokenLines: 'Smash subscribe if you want to see more about this.',
+      wordCount: 10,
+      avatar: {
+        placement: 'FULL_SCREEN',
+        size: 'FULL',
+        gestureHint: 'Smiles wide',
+        eyeContact: true,
+        backgroundType: 'SOLID_COLOR',
+        backgroundColor: '#000000'
+      },
+      broll: null,
+      textOverlays: [],
+      transitionOut: 'FADE',
+      directorNote: 'Slow down at the end.'
+    }
+  ],
+  postProduction: {
+    backgroundMusicMood: 'lo-fi chill',
+    backgroundMusicVolume: 0.1,
+    captionsEnabled: true,
+    captionStyle: 'WORD_BY_WORD',
+    colorGradePreset: 'warm cinematic',
+    aspectRatio: '9:16'
+  }
 })
 
 class LlmClient {
@@ -136,19 +207,18 @@ ${JSON.stringify(citations)}
     const result = await chatCompletion.create({
       provider: 'openai',
       model: 'gpt-4o',
-      maxTokens: 1200,
-      system: `You are a short-form video script writer. Your scripts are:
-- Conversational and engaging, not academic
-- Based strictly on the verified facts provided — never invent facts
-- Optimised for 60-90 second videos (150-225 words total)
-- Structured with clear sections: Hook, Context, Core Idea, Example/Evidence, Conclusion, CTA`,
+      maxTokens: 1800,
+      system: `You are a professional short-form video screenwriter and creative director. 
+Your scripts must output precisely to the detailed JSON schema provided to you without any wrapping text.
+Base the substance purely on the provided research without hallucination.
+Structure it scene-by-scene, keeping AVATAR_OVER_BROLL, AVATAR_ONLY, or BROLL_ONLY in mind.`,
       messages: [
         {
           role: 'user',
           content: `
-Write a structured video script about: "${prompt}"
+Write a highly engaging, structured short-form video script about: "${prompt}"
 
-VERIFIED RESEARCH (use ONLY these facts — do not invent any other claims):
+VERIFIED RESEARCH (use ONLY these facts):
 ${research.verifiedFactsSummary}
 
 KEY FINDINGS:
@@ -157,16 +227,31 @@ ${research.keyFindings.map((f) => `- ${f.claim} (${f.confidence} confidence)`).j
 STATISTICS AVAILABLE:
 ${research.statistics.map((s) => `- ${s.stat} (source: ${s.source})`).join('\n')}
 
-Return ONLY valid JSON — no markdown, no explanation, no preamble:
+Return ONLY valid JSON exactly matching the requested shape:
 {
-  "hook": string,
-  "context": string,
-  "coreIdea": string,
-  "exampleEvidence": string,
-  "conclusion": string,
-  "callToAction": string,
+  "title": string,
+  "topic": string,
+  "targetPlatform": string,
+  "totalDurationSeconds": number,
   "totalWordCount": number,
-  "estimatedDurationSeconds": number
+  "sceneCount": number,
+  "scenes": [
+    {
+      "sceneNumber": number,
+      "sceneType": "AVATAR_OVER_BROLL" | "AVATAR_ONLY" | "BROLL_ONLY",
+      "startTimeSeconds": number,
+      "endTimeSeconds": number,
+      "durationSeconds": number,
+      "spokenLines": string,
+      "wordCount": number,
+      "avatar": { "placement": string, "size": string, "gestureHint": string, "eyeContact": boolean, "backgroundType": string|null, "backgroundColor": string|null } | null,
+      "broll": { "source": string, "searchQuery": string, "searchKeywords": string[], "visualDescription": string, "mood": string, "colorGrade": string, "aspectRatio": string, "durationSeconds": number, "loopable": boolean, "fallbackSources": string[], "infographicData": null } | null,
+      "textOverlays": [ { "text": string, "position": string, "style": string, "animateIn": string, "durationSeconds": number, "highlightWords": string[] } ],
+      "transitionOut": string,
+      "directorNote": string
+    }
+  ],
+  "postProduction": { "backgroundMusicMood": string, "backgroundMusicVolume": number, "captionsEnabled": boolean, "captionStyle": string, "colorGradePreset": string, "aspectRatio": string }
 }
 `.trim(),
         },

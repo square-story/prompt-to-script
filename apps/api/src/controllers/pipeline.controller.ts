@@ -28,18 +28,7 @@ class PipelineController {
       )
 
       const research = await pipelineResearchService.run(validated.prompt, ingestedContent)
-      const scriptBase = await pipelineScriptService.run(validated.prompt, research)
-
-      const sections = pipelineScriptService.buildSections(scriptBase)
-
-      const totalWordCount =
-        scriptBase.totalWordCount > 0 ? scriptBase.totalWordCount : sections.reduce((sum, s) => sum + s.wordCount, 0)
-
-      const script = {
-        ...scriptBase,
-        totalWordCount,
-        sections,
-      }
+      const script = await pipelineScriptService.run(validated.prompt, research)
 
       const result: PipelineResult = {
         research,
