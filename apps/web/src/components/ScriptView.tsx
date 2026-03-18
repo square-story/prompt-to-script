@@ -169,7 +169,10 @@ export const ScriptView = ({ script }: ScriptViewProps) => {
                 </div>
                 <div>
                   <div className="text-sm font-bold text-text-primary flex items-center gap-2">
-                    {scene.sceneType.replace(/_/g, ' ')}
+                    {scene.section}
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-surface border border-border text-text-muted font-normal uppercase tracking-wider">
+                      {scene.sceneType.replace(/_/g, ' ')}
+                    </span>
                   </div>
                   <div className="text-xs text-text-muted mt-0.5">
                     {scene.startTimeSeconds}s - {scene.endTimeSeconds}s • {scene.durationSeconds}s duration

@@ -49,6 +49,7 @@ const buildMockScript = (prompt: string): VideoScript => ({
     {
       sceneNumber: 1,
       sceneType: 'AVATAR_OVER_BROLL',
+      section: 'Hook',
       startTimeSeconds: 0,
       endTimeSeconds: 20,
       durationSeconds: 20,
@@ -91,6 +92,7 @@ const buildMockScript = (prompt: string): VideoScript => ({
     {
       sceneNumber: 2,
       sceneType: 'AVATAR_ONLY',
+      section: 'Call to Action',
       startTimeSeconds: 20,
       endTimeSeconds: 60,
       durationSeconds: 40,
@@ -127,8 +129,8 @@ class LlmClient {
     }
 
     const result = await chatCompletion.create({
-      provider: 'openai',
-      model: 'gpt-4o',
+      provider: 'perplexity',
+      model: 'sonar-pro',
       maxTokens: 2000,
       system: 'You are a thorough research analyst. Research the given topic using your knowledge. Provide key facts, relevant statistics, multiple expert perspectives, any controversies or conflicting views. Be specific and cite your knowledge sources where possible.',
       messages: [
@@ -151,9 +153,14 @@ Provide a comprehensive research summary including:
       ],
     })
 
+    const citations: ResearchCitation[] = (result.citations ?? []).map((url) => {
+      const domain = (() => { try { return new URL(url).hostname } catch { return url } })()
+      return { url, domain }
+    })
+
     return {
       answer: result.content,
-      citations: [],
+      citations,
     }
   }
 
@@ -211,7 +218,7 @@ ${JSON.stringify(citations)}
       system: `You are a professional short-form video screenwriter and creative director. 
 Your scripts must output precisely to the detailed JSON schema provided to you without any wrapping text.
 Base the substance purely on the provided research without hallucination.
-Structure it scene-by-scene, keeping AVATAR_OVER_BROLL, AVATAR_ONLY, or BROLL_ONLY in mind.`,
+Structure it scene-by-scene, keeping AVATAR_OVER_BROLL, AVATAR_ONLY, or BROLL_ONLY in mind. Ensure every scene includes a logical 'section' label like 'Hook', 'Context', 'Visual Evidence', 'Core Idea', 'Conclusion', or 'Call to Action'.`,
       messages: [
         {
           role: 'user',
@@ -239,6 +246,7 @@ Return ONLY valid JSON exactly matching the requested shape:
     {
       "sceneNumber": number,
       "sceneType": "AVATAR_OVER_BROLL" | "AVATAR_ONLY" | "BROLL_ONLY",
+      "section": string,
       "startTimeSeconds": number,
       "endTimeSeconds": number,
       "durationSeconds": number,

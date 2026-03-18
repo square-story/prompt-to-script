@@ -74,6 +74,7 @@ export const TextOverlayDetailSchema = z.object({
 export const VideoSceneSchema = z.object({
   sceneNumber: z.number(),
   sceneType: z.string(),
+  section: z.string(),
   startTimeSeconds: z.number(),
   endTimeSeconds: z.number(),
   durationSeconds: z.number(),

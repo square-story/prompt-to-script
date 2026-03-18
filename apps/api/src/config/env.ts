@@ -35,6 +35,7 @@ const rawEnv = EnvSchema.parse(process.env)
 if (rawEnv.LLM_MODE === 'real') {
   const missing: string[] = []
   if (!rawEnv.OPENAI_API_KEY) missing.push('OPENAI_API_KEY')
+  if (!rawEnv.PERPLEXITY_API_KEY) missing.push('PERPLEXITY_API_KEY')
   if (missing.length > 0) {
     throw new Error(`Missing required env vars for LLM_MODE=real: ${missing.join(', ')}`)
   }

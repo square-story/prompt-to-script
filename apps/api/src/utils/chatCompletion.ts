@@ -25,6 +25,7 @@ interface ChatCompletionResult {
   content: string
   provider: LLMProvider
   model: string
+  citations?: string[]
 }
 
 // ── Connector ────────────────────────────────────────────────
@@ -148,12 +149,14 @@ class ChatCompletion {
 
     const json = (await res.json()) as {
       choices?: { message?: { content?: string } }[]
+      citations?: string[]
     }
 
     return {
       content: json.choices?.[0]?.message?.content ?? '',
       provider: 'perplexity',
       model: params.model,
+      citations: json.citations ?? [],
     }
   }
 }

@@ -64,6 +64,7 @@ export interface TextOverlayDetail {
 export interface VideoScene {
   sceneNumber: number
   sceneType: 'AVATAR_OVER_BROLL' | 'AVATAR_ONLY' | 'BROLL_ONLY' | string
+  section: string
   startTimeSeconds: number
   endTimeSeconds: number
   durationSeconds: number
